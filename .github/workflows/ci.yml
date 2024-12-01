@@ -30,5 +30,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Set JWT keys
+        run: |
+          echo "${{ secrets.JWT_PRIVATE_KEY }}" > privateKey.pem
+          echo "${{ secrets.JWT_PUBLIC_KEY }}" > publicKey.pem
+
       - name: Run tests
         run: mvn test
