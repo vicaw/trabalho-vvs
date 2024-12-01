@@ -1,8 +1,8 @@
 package dev.vicaw.resource;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,14 +10,12 @@ import org.junit.jupiter.api.Test;
 import dev.vicaw.model.AuthInfo;
 import dev.vicaw.model.User;
 import dev.vicaw.model.request.UserAuthRequest;
-import dev.vicaw.model.response.UserAuthResponse;
 import dev.vicaw.repository.AuthInfoRepository;
 import dev.vicaw.repository.UserRepository;
 import dev.vicaw.service.AuthService;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
-import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
@@ -38,7 +36,7 @@ class AuthResourceTest {
     void setUp() {
         User user = User.builder()
                 .name("Teste Usuario")
-                .photoUrl("photoUrl")
+                .photoUrl("http://localhost:8080/images/acde070d-8c4c-4f0d-9d8a-162843c10333-profilePicture.png")
                 .build();
 
         userRepository.persist(user);
@@ -56,37 +54,32 @@ class AuthResourceTest {
     void testAuthenticate_validUser() {
         UserAuthRequest userAuthRequest = new UserAuthRequest("usuario@example.com", "senha123");
 
-        Response response = given()
+        given()
                 .contentType(ContentType.JSON)
                 .body(userAuthRequest)
                 .when()
                 .post("/api/auth/login")
                 .then()
                 .statusCode(200)
-                .extract().response();
-
-        UserAuthResponse userAuthResponse = response.as(UserAuthResponse.class);
-        assertNotNull(userAuthResponse.getToken());
-        assertEquals("Teste Usuario", userAuthResponse.getUser().getName());
+                .body("token", notNullValue())
+                .body("user.name", equalTo("Teste Usuario"))
+                .body("user.photoUrl", equalTo(
+                        "http://localhost:8080/images/acde070d-8c4c-4f0d-9d8a-162843c10333-profilePicture.png"));
     }
 
     @Test
-
     @Transactional
     void testAuthenticate_invalidCredentials() {
         UserAuthRequest userAuthRequest = new UserAuthRequest("usuario@example.com", "senhaIncorreta");
 
-        Response response = given()
+        given()
                 .contentType(ContentType.JSON)
                 .body(userAuthRequest)
                 .when()
                 .post("/api/auth/login")
                 .then()
                 .statusCode(401)
-                .extract().response();
-
-        assertEquals("Seu usuário ou senha estão incorretos.",
-                response.jsonPath().getString("message"));
+                .body("message", equalTo("Seu usuário ou senha estão incorretos."));
     }
 
 }
