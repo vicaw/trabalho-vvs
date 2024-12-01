@@ -12,12 +12,12 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
@@ -34,8 +34,7 @@ import lombok.NoArgsConstructor;
 public class Image {
     @Id
     @Column(length = 16)
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(columnDefinition = "MEDIUMBLOB")
@@ -44,7 +43,7 @@ public class Image {
 
     private String name;
 
-    private Long article_id;
+    private Long articleId;
 
     @CreationTimestamp
     public LocalDateTime createdAt;
@@ -57,8 +56,7 @@ public class Image {
         try {
             ClassLoader classLoader = Image.class.getClassLoader();
             InputStream is = classLoader.getResourceAsStream("notfound.jpg");
-            Image image = new Image(null, is.readAllBytes(), "notfound.jpg", null, null, null);
-            return image;
+            return new Image(null, is.readAllBytes(), "notfound.jpg", null, null, null);
         } catch (IOException e) {
             return null;
         }
@@ -77,8 +75,8 @@ public class Image {
 
             double targetAspectRatio = (double) w / (double) h;
 
-            double imageWidth = (double) img.getWidth();
-            double imageHeight = (double) img.getHeight();
+            double imageWidth = img.getWidth();
+            double imageHeight = img.getHeight();
 
             double currAspectRatio = imageWidth / imageHeight;
 

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import dev.vicaw.exception.ApiException;
+import dev.vicaw.exception.RecipeNotFoundException;
 import dev.vicaw.model.Rating;
 import dev.vicaw.model.Recipe;
 import dev.vicaw.model.User;
@@ -43,7 +44,7 @@ public class RatingService {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(recipeId);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Não existe nenhuma receita com o ID informado.");
+            throw new RecipeNotFoundException();
 
         PanacheQuery<Rating> page = ratingRepository.listAllRecipeRatings(recipeId, orderBy)
                 .page(Page.of(pagenumber, pagesize));
@@ -75,7 +76,7 @@ public class RatingService {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(recipeId);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Não existe nenhuma receita com o ID informado.");
+            throw new RecipeNotFoundException();
 
         Long userId = Long.valueOf(token.getSubject());
         User user = userRepository.findById(userId);
@@ -93,7 +94,7 @@ public class RatingService {
 
         ratingRepository.persist(rating);
 
-        RatingResponse ratingsResponse = RatingResponse.builder()
+        return RatingResponse.builder()
                 .id(rating.getId())
                 .user(UserResponse.builder().id(rating.getUser().getId()).name(rating.getUser().getName())
                         .photoUrl(rating.getUser().getPhotoUrl()).build())
@@ -102,15 +103,13 @@ public class RatingService {
                 .createdAt(rating.getCreatedAt())
                 .updatedAt(rating.getUpdatedAt())
                 .build();
-
-        return ratingsResponse;
     }
 
     public RatingInfoResponse getRatingInfo(Long recipeId) {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(recipeId);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Não existe nenhuma receita com o ID informado.");
+            throw new RecipeNotFoundException();
 
         Long count = ratingRepository.ratingCount(recipeId);
         Double score = ratingRepository.calculateAverageScore(recipeId);
@@ -123,7 +122,7 @@ public class RatingService {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(recipeId);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Não existe nenhuma receita com o ID informado.");
+            throw new RecipeNotFoundException();
 
         return ratingRepository.calculateAverageScore(recipeId);
     }
@@ -132,7 +131,7 @@ public class RatingService {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(recipeId);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Não existe nenhuma receita com o ID informado.");
+            throw new RecipeNotFoundException();
 
         return ratingRepository.ratingCount(recipeId);
     }
@@ -156,7 +155,7 @@ public class RatingService {
 
         Rating rating = ratingOptional.get();
 
-        RatingResponse ratingsResponse = RatingResponse.builder()
+        return RatingResponse.builder()
                 .id(rating.getId())
                 .user(UserResponse.builder().id(rating.getUser().getId()).name(rating.getUser().getName())
                         .photoUrl(rating.getUser().getPhotoUrl()).build())
@@ -165,8 +164,6 @@ public class RatingService {
                 .createdAt(rating.getCreatedAt())
                 .updatedAt(rating.getUpdatedAt())
                 .build();
-
-        return ratingsResponse;
     }
 
 }

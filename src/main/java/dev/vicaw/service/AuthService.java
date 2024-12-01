@@ -5,9 +5,9 @@ import java.util.Optional;
 import org.eclipse.microprofile.jwt.Claims;
 
 import dev.vicaw.exception.ApiException;
-import dev.vicaw.model.response.UserAuthResponse;
 import dev.vicaw.model.AuthInfo;
 import dev.vicaw.model.request.UserAuthRequest;
+import dev.vicaw.model.response.UserAuthResponse;
 import dev.vicaw.model.response.UserResponse;
 import dev.vicaw.repository.AuthInfoRepository;
 import dev.vicaw.repository.UserRepository;
@@ -42,7 +42,7 @@ public class AuthService {
                 // .groups(user.getRole().toString())
                 .claim(Claims.full_name, authInfo.getUser().getName())
                 .claim(Claims.sub, authInfo.getUser().getId().toString())
-                .expiresIn(60 * 60 * 7)
+                .expiresIn(60 * 60 * 7L)
                 .sign();
 
         UserResponse userResponse = UserResponse.builder()
@@ -52,9 +52,7 @@ public class AuthService {
                 .email(authInfo.getEmail())
                 .build();
 
-        UserAuthResponse userAuthResponse = new UserAuthResponse(userResponse, token);
-
-        return userAuthResponse;
+        return new UserAuthResponse(userResponse, token);
     }
 
 }

@@ -1,61 +1,39 @@
 package dev.vicaw.repository;
 
+import java.util.Map;
+
 import dev.vicaw.model.Recipe;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
-
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class RecipeRepository implements PanacheRepository<Recipe> {
+
+    private static final String ORDER_BY_HIGHEST_SCORE = "rating";
+    private static final String ORDER_BY_RECENT = "recent";
+    private static final String ORDER_BY_OLDEST = "oldest";
+
+    private static final Map<String, Sort> SORT_OPTIONS = Map.of(
+            ORDER_BY_RECENT, Sort.by("createdAt").descending(),
+            ORDER_BY_OLDEST, Sort.by("createdAt").ascending(),
+            ORDER_BY_HIGHEST_SCORE,
+            Sort.by("(select coalesce(avg(ra.score), 0) from Rating ra where ra.recipe.id = r.id)").descending());
+
     public PanacheQuery<Recipe> listAllRecipes(String orderBy) {
-        String jpql = "from Recipe r ";
-
-        switch (orderBy) {
-            case "recent":
-                jpql += "order by r.createdAt desc";
-                break;
-            case "highest":
-            default:
-                jpql += "order by (select coalesce(avg(ra.score), 0) from Rating ra where ra.recipe.id = r.id) desc";
-                break;
-        }
-
-        return find(jpql);
+        Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
+        return findAll(sort);
     }
 
     public PanacheQuery<Recipe> listAllUserRecipes(Long authorId, String orderBy) {
-        String jpql = "from Recipe r where r.user.id = ?1 ";
-
-        switch (orderBy) {
-            case "recent":
-                jpql += "order by r.createdAt desc";
-                break;
-            case "highest":
-            default:
-                jpql += "order by (select coalesce(avg(ra.score), 0) from Rating ra where ra.recipe.id = r.id) desc";
-                break;
-        }
-
-        return find(jpql, authorId);
+        Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
+        return find("user.id", sort, authorId);
     }
 
     public PanacheQuery<Recipe> search(String query, String orderBy) {
-        String jpql = "from Recipe r where CONCAT_WS(' ', r.titulo, r.ingredientes) LIKE CONCAT('%',?1,'%')";
-
-        switch (orderBy) {
-            case "older":
-                jpql += "order by r.createdAt asc";
-                break;
-            case "newer":
-                jpql += "order by r.createdAt desc";
-                break;
-            case "rating":
-            default:
-                jpql += "order by (select coalesce(avg(ra.score), 0) from Rating ra where ra.recipe.id = r.id) desc";
-                break;
-        }
-
-        return find(jpql, query);
+        Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
+        return find("CONCAT_WS(' ', titulo, ingredientes) LIKE CONCAT('%', ?1, '%')", sort, query);
     }
+
 }

@@ -1,6 +1,5 @@
 package dev.vicaw.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -8,15 +7,14 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import dev.vicaw.exception.ApiException;
-import dev.vicaw.model.response.RecipeListResponse;
-import dev.vicaw.model.response.RecipeResponse;
-import dev.vicaw.model.response.UserResponse;
-
 import dev.vicaw.model.Recipe;
 import dev.vicaw.model.User;
 import dev.vicaw.model.request.MultipartBody;
 import dev.vicaw.model.request.RecipeCreateRequest;
 import dev.vicaw.model.request.RecipeUpdateRequest;
+import dev.vicaw.model.response.RecipeListResponse;
+import dev.vicaw.model.response.RecipeResponse;
+import dev.vicaw.model.response.UserResponse;
 import dev.vicaw.repository.RecipeRepository;
 import dev.vicaw.repository.UserRepository;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
@@ -53,7 +51,7 @@ public class RecipeService {
             recipesQuery = recipeRepository.listAllRecipes(orderBy);
         }
 
-        List<Recipe> recipeList = new ArrayList<>();
+        List<Recipe> recipeList;
         boolean hasMore = false;
 
         if (pagesize != null && pagenumber != null) {
@@ -98,7 +96,7 @@ public class RecipeService {
                 .photoUrl(recipe.getUser().getPhotoUrl())
                 .build();
 
-        RecipeResponse recipeResponse = RecipeResponse.builder()
+        return RecipeResponse.builder()
                 .id(recipe.getId())
                 .user(userResponse)
                 .titulo(recipe.getTitulo())
@@ -109,8 +107,6 @@ public class RecipeService {
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
                 .build();
-
-        return recipeResponse;
     }
 
     @Transactional
@@ -137,7 +133,7 @@ public class RecipeService {
                 .photoUrl(recipe.getUser().getPhotoUrl())
                 .build();
 
-        RecipeResponse recipeResponse = RecipeResponse.builder()
+        return RecipeResponse.builder()
                 .id(recipe.getId())
                 .user(userResponse)
                 .titulo(recipe.getTitulo())
@@ -147,8 +143,6 @@ public class RecipeService {
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
                 .build();
-
-        return recipeResponse;
     }
 
     @Transactional
@@ -191,7 +185,7 @@ public class RecipeService {
                 .photoUrl(recipe.getUser().getPhotoUrl())
                 .build();
 
-        RecipeResponse recipeResponse = RecipeResponse.builder()
+        return RecipeResponse.builder()
                 .id(recipe.getId())
                 .titulo(recipe.getTitulo())
                 .ingredientes(recipe.getIngredientes())
@@ -199,8 +193,6 @@ public class RecipeService {
                 .user(userResponse)
                 .urlFoto(recipe.getUrlFoto())
                 .build();
-
-        return recipeResponse;
     }
 
     @Transactional
@@ -216,7 +208,6 @@ public class RecipeService {
             throw new ApiException(403, "Você não pode deletar receitas de outros usuários.");
 
         recipeRepository.delete(recipe);
-        return;
     }
 
     public RecipeListResponse searchRecipe(String query, Integer pagesize, Integer pagenumber, String orderBy) {

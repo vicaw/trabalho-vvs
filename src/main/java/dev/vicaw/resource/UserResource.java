@@ -72,11 +72,8 @@ public class UserResource {
 
         // Apenas ADMIN pode editar outros usuários além dele.
         boolean isAdmin = token.getGroups().contains("ADMIN");
-        if (!isAdmin) {
-            if (!token.getSubject().equals(userId.toString())) {
-                throw new ApiException(403, "Você não pode editar outros usuários.");
-            }
-        }
+        if (!isAdmin && !token.getSubject().equals(userId.toString()))
+            throw new ApiException(403, "Você não pode editar outros usuários.");
 
         ObjectMapper mapper = new ObjectMapper();
         UserUpdateRequest userUpdateRequest = null;

@@ -6,21 +6,22 @@ import java.util.Optional;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import dev.vicaw.exception.ApiException;
-import dev.vicaw.model.response.UserAuthResponse;
-import dev.vicaw.model.response.UserResponse;
+import dev.vicaw.exception.UserNotFoundException;
 import dev.vicaw.model.AuthInfo;
 import dev.vicaw.model.User;
 import dev.vicaw.model.request.MultipartBody;
 import dev.vicaw.model.request.UserAuthRequest;
 import dev.vicaw.model.request.UserCreateRequest;
 import dev.vicaw.model.request.UserUpdateRequest;
+import dev.vicaw.model.response.UserAuthResponse;
+import dev.vicaw.model.response.UserResponse;
 import dev.vicaw.repository.AuthInfoRepository;
 import dev.vicaw.repository.UserRepository;
+import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import io.quarkus.elytron.security.common.BcryptUtil;
 
 @RequestScoped
 public class UserService {
@@ -48,7 +49,7 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByIdOptional(id);
 
         if (userOptional.isEmpty())
-            throw new ApiException(404, "Não foi encontrado nenhum usuário com o ID informado.");
+            throw new UserNotFoundException();
 
         User user = userOptional.get();
         UserResponse userResponse = UserResponse.builder()
@@ -97,7 +98,7 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByIdOptional(userId);
 
         if (userOptional.isEmpty())
-            throw new ApiException(404, "Não foi encontrado nenhum usuário com o ID informado.");
+            throw new UserNotFoundException();
 
         User user = userOptional.get();
         AuthInfo authInfo = authInfoRepository.findByUserId(userId);
@@ -118,14 +119,12 @@ public class UserService {
             authInfo.setPassword(BcryptUtil.bcryptHash(updateInput.getNewPassword()));
         }
 
-        UserResponse userResponse = UserResponse.builder()
+        return UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(authInfo.getEmail())
                 .photoUrl(user.getPhotoUrl())
                 .build();
-
-        return userResponse;
     }
 
     @Transactional
@@ -133,17 +132,11 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByIdOptional(id);
 
         if (userOptional.isEmpty())
-            throw new ApiException(404, "Não foi encontrado nenhum usuário com o ID informado.");
+            throw new UserNotFoundException();
 
         User user = userOptional.get();
-        // Não é permitido deletar administradores
-        // if (user.getRole() == Role.ADMIN)
-        // throw new ApiException(403, "Não é permitido remover outros
-        // administradores.");
 
         userRepository.delete(user);
-
-        return;
     }
 
 }

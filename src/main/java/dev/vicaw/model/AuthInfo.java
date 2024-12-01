@@ -32,14 +32,9 @@ public class AuthInfo {
 
     private String password;
 
-    // @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    // @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
     @OneToOne
     @MapsId
     private User user;
-
-    // @Column(name = "user_id")
-    // private Long userId;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
