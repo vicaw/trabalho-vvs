@@ -10,7 +10,6 @@ import dev.vicaw.model.request.UserAuthRequest;
 import dev.vicaw.model.response.UserAuthResponse;
 import dev.vicaw.model.response.UserResponse;
 import dev.vicaw.repository.AuthInfoRepository;
-import dev.vicaw.repository.UserRepository;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.RequestScoped;
@@ -21,9 +20,6 @@ public class AuthService {
 
     @Inject
     AuthInfoRepository authInfoRepository;
-
-    @Inject
-    UserRepository userRepository;
 
     public UserAuthResponse authenticate(UserAuthRequest userAuthRequest) {
         Optional<AuthInfo> entity = authInfoRepository.findByEmail(userAuthRequest.getEmail());
