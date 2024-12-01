@@ -59,8 +59,12 @@ public class UserService {
                 .build();
 
         if (token.getRawToken() != null && token.getSubject().equals(user.getId().toString())) {
-            AuthInfo authInfo = authInfoRepository.findByUserId(user.getId());
-            userResponse.setEmail(authInfo.getEmail());
+            Optional<AuthInfo> authInfo = authInfoRepository.findByUserId(user.getId());
+            if (authInfo.isEmpty())
+                throw new ApiException(404,
+                        "Informações de autenticação não encontradas para o usuário com ID " + user.getId());
+
+            userResponse.setEmail(authInfo.get().getEmail());
         }
 
         return userResponse;
@@ -101,7 +105,13 @@ public class UserService {
             throw new UserNotFoundException();
 
         User user = userOptional.get();
-        AuthInfo authInfo = authInfoRepository.findByUserId(userId);
+
+        Optional<AuthInfo> authInfoOptional = authInfoRepository.findByUserId(user.getId());
+        if (authInfoOptional.isEmpty())
+            throw new ApiException(404,
+                    "Informações de autenticação não encontradas para o usuário com ID " + user.getId());
+
+        AuthInfo authInfo = authInfoOptional.get();
 
         if (updateInput.getName() != null && !updateInput.getName().isBlank()) {
             user.setName(updateInput.getName());

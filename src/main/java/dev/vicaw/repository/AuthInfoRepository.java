@@ -12,7 +12,7 @@ public class AuthInfoRepository implements PanacheRepository<AuthInfo> {
         return find("email", email).firstResultOptional();
     }
 
-    public AuthInfo findByUserId(Long userId) {
-        return find("user.id", userId).firstResult();
+    public Optional<AuthInfo> findByUserId(Long userId) {
+        return find("user.id", userId).firstResultOptional();
     }
 }
