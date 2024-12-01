@@ -91,6 +91,6 @@ class UserServiceTest {
                 () -> userService.getById(-1L));
 
         assertEquals(404, exception.getCode());
-        assertEquals("Não existe nenhuma receita com o ID informado.", exception.getMessage());
+        assertEquals("Não existe nenhum usuário com o ID informado.", exception.getMessage());
     }
 }
