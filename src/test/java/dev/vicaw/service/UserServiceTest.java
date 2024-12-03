@@ -192,7 +192,7 @@ class UserServiceTest {
         ApiException exception = assertThrows(ApiException.class,
                 () -> userService.update(userId, null, userUpdateRequest));
 
-        assertEquals(401, exception.getCode());
+        assertEquals(400, exception.getCode());
         assertEquals("Senha incorreta.", exception.getMessage());
     }
 }
