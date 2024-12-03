@@ -11,15 +11,20 @@
 
 ## Procedimentos
 
+- **Controle de Qualidade:**
+
+  - Análise estática de código é realizada com **SonarLint** no **VS Code**.
+
 - **Commits:**
 
-  - Os commits são realizados diretamente na branch `master`.
-  - Cada commit possui mensagens descritivas no seguinte formato:
+  - Os commits serão realizados diretamente na branch `dev`.
+  - Cada commit deve possuir mensagens descritivas no seguinte formato:
     - Exemplo: `"Corrige mensagem de erro da exceção UserNotFoundException"`.
 
-- **Controle de Qualidade:**
-  - Durante o commit, o pipeline do **GitHub Actions** executa os testes automatizados.
-  - Análise estática de código é feita com **SonarLint** no **VS Code**.
+- **Pull Request:**
+
+  - Após realizar os commits na branch `dev`, será necessário criar um **pull request** para a branch `master`.
+  - O **pull request** só poderá ser aprovado se os **testes automatizados** no pipeline do **GitHub Actions** passarem.
 
 ## Requisitos, Restrições e Configurações
 
@@ -41,6 +46,7 @@
   - O pipeline de CI/CD é configurado no **GitHub Actions** e é acionado a cada `commit` para a branch `master`.
   - O pipeline configura o ambiente de execução com o **JDK 11** e executa os testes com **Maven**.
   - Para a realização dos testes que utilizam JWT, as **chaves públicas e privadas** para assinar e validar os tokens são armazenadas como **secrets** no GitHub Actions.
+  - A regra **"Require status checks to pass before merging"** foi configurada, o que significa que o pull request só pode ser aceito após a aprovação dos testes no pipeline.
 
 ## Especificação de Casos de Teste
 

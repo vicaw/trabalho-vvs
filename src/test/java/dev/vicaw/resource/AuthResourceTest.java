@@ -12,7 +12,6 @@ import dev.vicaw.model.User;
 import dev.vicaw.model.request.UserAuthRequest;
 import dev.vicaw.repository.AuthInfoRepository;
 import dev.vicaw.repository.UserRepository;
-import dev.vicaw.service.AuthService;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -21,10 +20,6 @@ import jakarta.transaction.Transactional;
 
 @QuarkusTest
 class AuthResourceTest {
-
-    @Inject
-    AuthService authService;
-
     @Inject
     AuthInfoRepository authInfoRepository;
 
@@ -34,6 +29,8 @@ class AuthResourceTest {
     private static String validEmail = "usuario@example.com";
     private static String validPassword = "senha123";
     private static String invalidPassword = "senhaIncorreta";
+
+    private static final String BASE_URL = "/api/auth";
 
     @BeforeEach
     @Transactional
@@ -62,7 +59,7 @@ class AuthResourceTest {
                 .contentType(ContentType.JSON)
                 .body(userAuthRequest)
                 .when()
-                .post("/api/auth/login")
+                .post(BASE_URL + "/login")
                 .then()
                 .statusCode(200)
                 .body("token", notNullValue())
@@ -79,7 +76,7 @@ class AuthResourceTest {
                 .contentType(ContentType.JSON)
                 .body(userAuthRequest)
                 .when()
-                .post("/api/auth/login")
+                .post(BASE_URL + "/login")
                 .then()
                 .statusCode(401)
                 .body("message", equalTo("Seu usuário ou senha estão incorretos."));
