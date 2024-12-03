@@ -31,9 +31,13 @@ class AuthResourceTest {
     @Inject
     UserRepository userRepository;
 
+    private static String validEmail = "usuario@example.com";
+    private static String validPassword = "senha123";
+    private static String invalidPassword = "senhaIncorreta";
+
     @BeforeEach
     @Transactional
-    void setUp() {
+    void insertUser() {
         User user = User.builder()
                 .name("Teste Usuario")
                 .photoUrl("http://localhost:8080/images/acde070d-8c4c-4f0d-9d8a-162843c10333-profilePicture.png")
@@ -42,8 +46,8 @@ class AuthResourceTest {
         userRepository.persist(user);
 
         AuthInfo authInfo = AuthInfo.builder()
-                .email("usuario@example.com")
-                .password(BcryptUtil.bcryptHash("senha123"))
+                .email(validEmail)
+                .password(BcryptUtil.bcryptHash(validPassword))
                 .user(user)
                 .build();
 
@@ -52,7 +56,7 @@ class AuthResourceTest {
 
     @Test
     void testAuthenticate_validUser() {
-        UserAuthRequest userAuthRequest = new UserAuthRequest("usuario@example.com", "senha123");
+        UserAuthRequest userAuthRequest = new UserAuthRequest(validEmail, validPassword);
 
         given()
                 .contentType(ContentType.JSON)
@@ -68,9 +72,8 @@ class AuthResourceTest {
     }
 
     @Test
-    @Transactional
     void testAuthenticate_invalidCredentials() {
-        UserAuthRequest userAuthRequest = new UserAuthRequest("usuario@example.com", "senhaIncorreta");
+        UserAuthRequest userAuthRequest = new UserAuthRequest(validEmail, invalidPassword);
 
         given()
                 .contentType(ContentType.JSON)
