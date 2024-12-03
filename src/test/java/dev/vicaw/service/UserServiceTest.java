@@ -34,165 +34,161 @@ import io.quarkus.elytron.security.common.BcryptUtil;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock
-    UserRepository userRepository;
+	@Mock
+	UserRepository userRepository;
 
-    @Mock
-    AuthInfoRepository authInfoRepository;
+	@Mock
+	AuthInfoRepository authInfoRepository;
 
-    @Mock
-    ImageService imageService;
+	@Mock
+	AuthService authService;
 
-    @Mock
-    AuthService authService;
+	@Mock
+	JsonWebToken token;
 
-    @Mock
-    JsonWebToken token;
+	@InjectMocks
+	UserService userService;
 
-    @InjectMocks
-    UserService userService;
+	private User user;
+	private AuthInfo authInfo;
+	private UserCreateRequest userCreateRequest;
+	private UserUpdateRequest userUpdateRequest;
 
-    private User user;
-    private AuthInfo authInfo;
-    private UserCreateRequest userCreateRequest;
-    private UserUpdateRequest userUpdateRequest;
+	@BeforeEach
+	void setUp() {
+		user = User.builder()
+				.id(1L)
+				.name("Usuário Teste")
+				.photoUrl("http://localhost:8080/images/default.jpg")
+				.build();
 
-    @BeforeEach
-    void setUp() {
-        user = User.builder()
-                .id(1L)
-                .name("Usuário Teste")
-                .photoUrl("http://localhost:8080/images/default.jpg")
-                .build();
+		authInfo = AuthInfo.builder()
+				.email("email@example.com")
+				.password(BcryptUtil.bcryptHash("senha"))
+				.user(user)
+				.build();
 
-        authInfo = AuthInfo.builder()
-                .email("email@example.com")
-                .password(BcryptUtil.bcryptHash("senha"))
-                .user(user)
-                .build();
+		userCreateRequest = UserCreateRequest.builder()
+				.name("Novo Usuario")
+				.email("novoemail@example.com")
+				.password("senha123")
+				.build();
 
-        userCreateRequest = UserCreateRequest.builder()
-                .name("Novo Usuario")
-                .email("novoemail@example.com")
-                .password("senha123")
-                .build();
+		userUpdateRequest = UserUpdateRequest.builder()
+				.name("Novo Nome")
+				.currentPassword("senha")
+				.newPassword("novaSenha")
+				.build();
+	}
 
-        userUpdateRequest = UserUpdateRequest.builder()
-                .name("Novo Nome")
-                .currentPassword("senha")
-                .newPassword("novaSenha")
-                .build();
-    }
+	@Test
+	void testGetById_UserFoundTokenMatchesUser() {
+		when(token.getRawToken()).thenReturn("userToken");
+		when(token.getSubject()).thenReturn(user.getId().toString());
+		when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
+		when(authInfoRepository.findByUserId(user.getId())).thenReturn(Optional.of(authInfo));
 
-    @Test
-    void testGetById_UserFoundTokenMatchesUser() {
-        when(token.getRawToken()).thenReturn("userToken");
-        when(token.getSubject()).thenReturn(user.getId().toString());
-        when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
-        when(authInfoRepository.findByUserId(user.getId())).thenReturn(Optional.of(authInfo));
+		UserResponse userResponse = userService.getById(user.getId());
 
-        UserResponse userResponse = userService.getById(user.getId());
+		assertEquals(user.getId(), userResponse.getId());
+		assertEquals(user.getName(), userResponse.getName());
+		assertEquals(user.getPhotoUrl(), userResponse.getPhotoUrl());
+		assertEquals(authInfo.getEmail(), userResponse.getEmail());
+	}
 
-        assertEquals(user.getId(), userResponse.getId());
-        assertEquals(user.getName(), userResponse.getName());
-        assertEquals(user.getPhotoUrl(), userResponse.getPhotoUrl());
-        assertEquals(authInfo.getEmail(), userResponse.getEmail());
-    }
+	@Test
+	void testGetById_UserFoundTokenDoesNotMatchUser() {
+		when(token.getRawToken()).thenReturn("userToken");
+		when(token.getSubject()).thenReturn("-1L");
+		when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
 
-    @Test
-    void testGetById_UserFoundTokenDoesNotMatchUser() {
-        when(token.getRawToken()).thenReturn("userToken");
-        when(token.getSubject()).thenReturn("-1L");
-        when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
+		UserResponse userResponse = userService.getById(user.getId());
 
-        UserResponse userResponse = userService.getById(user.getId());
+		assertEquals(user.getId(), userResponse.getId());
+		assertEquals(user.getName(), userResponse.getName());
+		assertEquals(user.getPhotoUrl(), userResponse.getPhotoUrl());
+		assertNull(userResponse.getEmail());
+	}
 
-        assertEquals(user.getId(), userResponse.getId());
-        assertEquals(user.getName(), userResponse.getName());
-        assertEquals(user.getPhotoUrl(), userResponse.getPhotoUrl());
-        assertNull(userResponse.getEmail());
-    }
+	@Test
+	void testGetById_UserDoesNotExist() {
+		when(userRepository.findByIdOptional(999L)).thenReturn(Optional.empty());
 
-    @Test
-    void testGetById_UserDoesNotExist() {
-        when(userRepository.findByIdOptional(999L)).thenReturn(Optional.empty());
+		assertThrows(UserNotFoundException.class,
+				() -> userService.getById(999L));
+	}
 
-        assertThrows(UserNotFoundException.class,
-                () -> userService.getById(999L));
-    }
+	@Test
+	void testCreateUser_DuplicateEmail() {
+		userCreateRequest.setEmail(authInfo.getEmail());
 
-    @Test
-    void testCreateUser_DuplicateEmail() {
-        userCreateRequest.setEmail(authInfo.getEmail());
+		when(authInfoRepository.findByEmail(authInfo.getEmail()))
+				.thenReturn(Optional.of(authInfo));
 
-        when(authInfoRepository.findByEmail(authInfo.getEmail()))
-                .thenReturn(Optional.of(authInfo));
+		ApiException exception = assertThrows(ApiException.class,
+				() -> userService.create(null, userCreateRequest));
 
-        ApiException exception = assertThrows(ApiException.class,
-                () -> userService.create(null, userCreateRequest));
+		assertEquals(409, exception.getCode());
+		assertEquals("O e-mail informado já está cadastrado.", exception.getMessage());
+	}
 
-        assertEquals(409, exception.getCode());
-        assertEquals("O e-mail informado já está cadastrado.", exception.getMessage());
-    }
+	@Test
+	void testCreateUser_Success() {
+		UserAuthRequest userAuthRequest = UserAuthRequest.builder()
+				.email(userCreateRequest.getEmail())
+				.password(userCreateRequest.getPassword())
+				.build();
 
-    @Test
-    void testCreateUser_Success() {
-        UserAuthRequest userAuthRequest = UserAuthRequest.builder()
-                .email(userCreateRequest.getEmail())
-                .password(userCreateRequest.getPassword())
-                .build();
+		UserResponse userResponse = UserResponse.builder()
+				.id(1L)
+				.name(userCreateRequest.getName())
+				.email(userCreateRequest.getEmail())
+				.photoUrl("http://localhost:8080/images/default.jpg")
+				.build();
 
-        UserResponse userResponse = UserResponse.builder()
-                .id(1L)
-                .name(userCreateRequest.getName())
-                .email(userCreateRequest.getEmail())
-                .photoUrl("http://localhost:8080/images/default.jpg")
-                .build();
+		UserAuthResponse userAuthResponse = UserAuthResponse.builder()
+				.token("token")
+				.user(userResponse)
+				.build();
 
-        UserAuthResponse userAuthResponse = UserAuthResponse.builder()
-                .token("token")
-                .user(userResponse)
-                .build();
+		when(authInfoRepository.findByEmail(userCreateRequest.getEmail())).thenReturn(Optional.empty());
 
-        when(authInfoRepository.findByEmail(userCreateRequest.getEmail())).thenReturn(Optional.empty());
-        when(imageService.save(any())).thenReturn("http://localhost/images/profile.jpg");
+		when(authService.authenticate(userAuthRequest)).thenReturn(userAuthResponse);
 
-        when(authService.authenticate(userAuthRequest)).thenReturn(userAuthResponse);
+		UserAuthResponse response = userService.create(null, userCreateRequest);
 
-        UserAuthResponse response = userService.create(null, userCreateRequest);
+		assertNotNull(response);
+		assertEquals(userAuthResponse, response);
 
-        assertNotNull(response);
-        assertEquals(userAuthResponse, response);
+		verify(userRepository).persist(any(User.class));
+		verify(authInfoRepository).persist(any(AuthInfo.class));
+		verify(authService).authenticate(any(UserAuthRequest.class));
+	}
 
-        verify(userRepository).persist(any(User.class));
-        verify(authInfoRepository).persist(any(AuthInfo.class));
-        verify(authService).authenticate(any(UserAuthRequest.class));
-    }
+	@Test
+	void testUpdateUserName_Success() {
+		when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
+		when(authInfoRepository.findByUserId(user.getId())).thenReturn(Optional.of(authInfo));
 
-    @Test
-    void testUpdateUserName_Success() {
-        when(userRepository.findByIdOptional(user.getId())).thenReturn(Optional.of(user));
-        when(authInfoRepository.findByUserId(user.getId())).thenReturn(Optional.of(authInfo));
+		UserResponse updatedUser = userService.update(user.getId(), null, userUpdateRequest);
 
-        UserResponse updatedUser = userService.update(user.getId(), null, userUpdateRequest);
+		assertEquals(userUpdateRequest.getName(), updatedUser.getName());
+		assertEquals(authInfo.getEmail(), updatedUser.getEmail());
+	}
 
-        assertEquals(userUpdateRequest.getName(), updatedUser.getName());
-        assertEquals(authInfo.getEmail(), updatedUser.getEmail());
-    }
+	@Test
+	void testUpdateUserPassword_IncorrectCurrentPassword() {
+		userUpdateRequest.setCurrentPassword("senhaErrada");
 
-    @Test
-    void testUpdateUserPassword_IncorrectCurrentPassword() {
-        userUpdateRequest.setCurrentPassword("senhaErrada");
+		Long userId = user.getId();
 
-        Long userId = user.getId();
+		when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
+		when(authInfoRepository.findByUserId(userId)).thenReturn(Optional.of(authInfo));
 
-        when(userRepository.findByIdOptional(userId)).thenReturn(Optional.of(user));
-        when(authInfoRepository.findByUserId(userId)).thenReturn(Optional.of(authInfo));
+		ApiException exception = assertThrows(ApiException.class,
+				() -> userService.update(userId, null, userUpdateRequest));
 
-        ApiException exception = assertThrows(ApiException.class,
-                () -> userService.update(userId, null, userUpdateRequest));
-
-        assertEquals(401, exception.getCode());
-        assertEquals("Senha incorreta.", exception.getMessage());
-    }
+		assertEquals(401, exception.getCode());
+		assertEquals("Senha incorreta.", exception.getMessage());
+	}
 }

@@ -4,8 +4,10 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import dev.vicaw.model.AuthInfo;
 import dev.vicaw.model.User;
@@ -19,6 +21,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthResourceTest {
     @Inject
     AuthInfoRepository authInfoRepository;
@@ -32,22 +35,24 @@ class AuthResourceTest {
 
     private static final String BASE_URL = "/api/auth";
 
-    @BeforeEach
+    private User user;
+    private AuthInfo authInfo;
+
+    @BeforeAll
     @Transactional
     void insertUser() {
-        User user = User.builder()
+        user = User.builder()
                 .name("Teste Usuario")
                 .photoUrl("http://localhost:8080/images/acde070d-8c4c-4f0d-9d8a-162843c10333-profilePicture.png")
                 .build();
 
-        userRepository.persist(user);
-
-        AuthInfo authInfo = AuthInfo.builder()
+        authInfo = AuthInfo.builder()
                 .email(validEmail)
                 .password(BcryptUtil.bcryptHash(validPassword))
                 .user(user)
                 .build();
 
+        userRepository.persist(user);
         authInfoRepository.persist(authInfo);
     }
 
@@ -63,9 +68,9 @@ class AuthResourceTest {
                 .then()
                 .statusCode(200)
                 .body("token", notNullValue())
-                .body("user.name", equalTo("Teste Usuario"))
-                .body("user.photoUrl", equalTo(
-                        "http://localhost:8080/images/acde070d-8c4c-4f0d-9d8a-162843c10333-profilePicture.png"));
+                .body("user.name", equalTo(user.getName()))
+                .body("user.email", equalTo(authInfo.getEmail()))
+                .body("user.photoUrl", equalTo(user.getPhotoUrl()));
     }
 
     @Test
@@ -80,6 +85,13 @@ class AuthResourceTest {
                 .then()
                 .statusCode(401)
                 .body("message", equalTo("Seu usuário ou senha estão incorretos."));
+    }
+
+    @AfterAll
+    @Transactional
+    void cleanupDatabase() {
+        authInfoRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
 }
