@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,11 +31,16 @@ class AuthServiceTest {
     @Mock
     AuthInfoRepository authInfoRepository;
 
-    private static UserAuthRequest userAuthRequest = new UserAuthRequest("email@example.com", "senha");
+    private static UserAuthRequest userAuthRequest;
+
+    @BeforeAll
+    static void setUp() {
+        userAuthRequest = new UserAuthRequest("email@example.com", "senha");
+    }
 
     @Test
     void testAuthenticate_userNotFound() {
-        when(authInfoRepository.findByEmail("email@example.com")).thenReturn(Optional.empty());
+        when(authInfoRepository.findByEmail(userAuthRequest.getEmail())).thenReturn(Optional.empty());
 
         ApiException exception = assertThrows(ApiException.class,
                 () -> authService.authenticate(userAuthRequest));
@@ -49,7 +55,7 @@ class AuthServiceTest {
                 .password(BcryptUtil.bcryptHash("senhaIncorreta"))
                 .build();
 
-        when(authInfoRepository.findByEmail("email@example.com")).thenReturn(Optional.of(authInfo));
+        when(authInfoRepository.findByEmail(userAuthRequest.getEmail())).thenReturn(Optional.of(authInfo));
 
         ApiException exception = assertThrows(ApiException.class,
                 () -> authService.authenticate(userAuthRequest));
@@ -70,7 +76,7 @@ class AuthServiceTest {
                 .password(BcryptUtil.bcryptHash("senha"))
                 .build();
 
-        when(authInfoRepository.findByEmail("email@example.com")).thenReturn(Optional.of(authInfo));
+        when(authInfoRepository.findByEmail(userAuthRequest.getEmail())).thenReturn(Optional.of(authInfo));
 
         UserAuthResponse response = authService.authenticate(userAuthRequest);
 
