@@ -1,9 +1,13 @@
 package dev.vicaw.model.request;
 
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Builder
+@Getter
+@Setter
 public class UserUpdateRequest {
     @Size(min = 3, max = 30, message = "Seu nome deve ter entre 3 e 30 caracteres")
     private String name;

@@ -117,7 +117,7 @@ public class UserService {
             user.setName(updateInput.getName());
         }
 
-        if (body.getImage() != null) {
+        if (body != null && body.getImage() != null) {
             String photoUrl = imageService.save(body);
             user.setPhotoUrl(photoUrl);
         }
