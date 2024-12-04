@@ -1,5 +1,23 @@
 # Plano de Testes - Tasty
 
+**Tasty** é uma plataforma de compartilhamento de receitas com funcionalidades para gerenciamento de usuários, criação e consulta de receitas, e avaliação das receitas por outros usuários.
+
+### Serviço de Usuário
+
+- Gerencia informações do usuário como nome de exibição e foto, com operações de cadastro, consulta e atualização.
+
+### Serviço de Autenticação
+
+- Gerencia login de usuários com email, senha e autenticação via JWT.
+
+### Serviço de Receitas
+
+- Permite a criação, atualização e pesquisa de receitas.
+
+### Serviço de Avaliação
+
+- Permite aos usuários avaliar receitas com notas e comentários, além de consultar a média de avaliações.
+
 ## Ferramentas Utilizadas
 
 - **Mockito**: Para criação de mocks e testes unitários.
