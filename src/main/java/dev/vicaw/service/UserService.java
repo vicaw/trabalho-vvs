@@ -75,7 +75,9 @@ public class UserService {
         if (authInfoRepository.findByEmail(userCreateRequest.getEmail()).isPresent())
             throw new ApiException(409, "O e-mail informado já está cadastrado.");
 
-        String photoUrl = imageService.save(body);
+        String photoUrl = "#";
+        if (body != null && body.getImage() != null)
+            photoUrl = imageService.save(body);
 
         User user = User.builder()
                 .name(userCreateRequest.getName())
