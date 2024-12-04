@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import dev.vicaw.exception.ApiException;
+import dev.vicaw.exception.RecipeNotFoundException;
 import dev.vicaw.model.Recipe;
 import dev.vicaw.model.User;
 import dev.vicaw.model.request.MultipartBody;
@@ -86,7 +87,7 @@ public class RecipeService {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(id);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Nenhuma receita foi encontrada com o ID informado.");
+            throw new RecipeNotFoundException();
 
         Recipe recipe = recipeOptional.get();
 
