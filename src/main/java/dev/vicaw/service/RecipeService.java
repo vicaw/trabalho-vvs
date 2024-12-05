@@ -164,6 +164,7 @@ public class RecipeService {
         String titulo = recipeUpdateRequest.getTitulo();
         String ingredientes = recipeUpdateRequest.getIngredientes();
         String modoPreparo = recipeUpdateRequest.getModoPreparo();
+        String about = recipeUpdateRequest.getAbout();
 
         if (titulo != null && !titulo.isBlank()) {
             recipe.setTitulo(titulo);
@@ -175,6 +176,10 @@ public class RecipeService {
 
         if (modoPreparo != null && !modoPreparo.isBlank()) {
             recipe.setModoPreparo(modoPreparo);
+        }
+
+        if (about != null && !about.isBlank()) {
+            recipe.setAbout(about);
         }
 
         if (body.getImage() != null) {
@@ -195,6 +200,7 @@ public class RecipeService {
                 .modoPreparo(recipe.getModoPreparo())
                 .user(userResponse)
                 .urlFoto(recipe.getUrlFoto())
+                .about(recipe.getAbout())
                 .build();
     }
 

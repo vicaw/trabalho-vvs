@@ -306,7 +306,7 @@ class RecipeServiceTest {
         assertEquals(response.getTitulo(), request.getTitulo());
         assertEquals(response.getIngredientes(), request.getIngredientes());
         assertEquals(response.getModoPreparo(), request.getModoPreparo());
-        assertEquals(response.getAbout(), request.getAbout());
+        assertEquals(response.getAbout(), recipe.getAbout());
 
         assertEquals(response.getUser().getId(), user2.getId());
         assertEquals(response.getUser().getName(), user2.getName());

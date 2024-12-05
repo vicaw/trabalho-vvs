@@ -33,7 +33,7 @@ public class RecipeRepository implements PanacheRepository<Recipe> {
 
     public PanacheQuery<Recipe> search(String query, String orderBy) {
         Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
-        return find("CONCAT_WS(' ', titulo, ingredientes) LIKE CONCAT('%', ?1, '%')", sort, query);
+        return find("CONCAT_WS(' ', LOWER(titulo), LOWER(ingredientes)) LIKE CONCAT('%', LOWER(?1), '%')", sort, query);
     }
 
 }
