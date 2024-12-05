@@ -81,8 +81,12 @@ public class RatingService {
         Long userId = Long.valueOf(token.getSubject());
         User user = userRepository.findById(userId);
 
+        if (recipeOptional.get().getUser().getId().equals(userId)) {
+            throw new ApiException(403, "Você não pode avaliar sua própria receita.");
+        }
+
         if (ratingRepository.existsByUserAndRecipeId(userId, recipeId)) {
-            throw new ApiException(400, "Este usuário já comentou nesta receita.");
+            throw new ApiException(409, "Este usuário já comentou nesta receita.");
         }
 
         Rating rating = Rating.builder()

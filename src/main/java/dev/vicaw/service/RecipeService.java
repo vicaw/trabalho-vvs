@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import dev.vicaw.exception.ApiException;
+import dev.vicaw.exception.RecipeNotFoundException;
 import dev.vicaw.model.Recipe;
 import dev.vicaw.model.User;
 import dev.vicaw.model.request.MultipartBody;
@@ -18,7 +19,6 @@ import dev.vicaw.model.response.UserResponse;
 import dev.vicaw.repository.RecipeRepository;
 import dev.vicaw.repository.UserRepository;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
-import io.quarkus.panache.common.Page;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -42,27 +42,14 @@ public class RecipeService {
     @Inject
     JsonWebToken token;
 
-    public RecipeListResponse list(Long authorId, Integer pagesize, Integer pagenumber, String orderBy) {
-        PanacheQuery<Recipe> recipesQuery;
+    public RecipeListResponse list(Long authorId, Integer pageSize, Integer pageNumber, String orderBy) {
+        PanacheQuery<Recipe> recipesQuery = (authorId != null)
+                ? recipeRepository.listUserRecipes(authorId, orderBy, pageSize, pageNumber)
+                : recipeRepository.listRecipes(orderBy, pageSize, pageNumber);
 
-        if (authorId != null) {
-            recipesQuery = recipeRepository.listAllUserRecipes(authorId, orderBy);
-        } else {
-            recipesQuery = recipeRepository.listAllRecipes(orderBy);
-        }
+        boolean hasMore = (pageSize != null && pageNumber != null) && recipesQuery.hasNextPage();
 
-        List<Recipe> recipeList;
-        boolean hasMore = false;
-
-        if (pagesize != null && pagenumber != null) {
-            PanacheQuery<Recipe> page = recipesQuery.page(Page.of(pagenumber, pagesize));
-            hasMore = page.hasNextPage();
-            recipeList = page.list();
-        } else {
-            recipeList = recipesQuery.list();
-        }
-
-        List<RecipeResponse> recipes = recipeList.stream()
+        List<RecipeResponse> recipes = recipesQuery.list().stream()
                 .map(recipe -> RecipeResponse.builder()
                         .id(recipe.getId())
                         .titulo(recipe.getTitulo())
@@ -79,14 +66,17 @@ public class RecipeService {
                         .build())
                 .collect(Collectors.toList());
 
-        return RecipeListResponse.builder().hasMore(hasMore).recipes(recipes).build();
+        return RecipeListResponse.builder()
+                .hasMore(hasMore)
+                .recipes(recipes)
+                .build();
     }
 
     public RecipeResponse getById(Long id) {
         Optional<Recipe> recipeOptional = recipeRepository.findByIdOptional(id);
 
         if (recipeOptional.isEmpty())
-            throw new ApiException(404, "Nenhuma receita foi encontrada com o ID informado.");
+            throw new RecipeNotFoundException();
 
         Recipe recipe = recipeOptional.get();
 
@@ -106,6 +96,8 @@ public class RecipeService {
                 .modoPreparo(recipe.getModoPreparo())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
+                .rating(ratingService.getAverageRating(recipe.getId()))
+                .ratingCount(ratingService.getRatingCount(recipe.getId()))
                 .build();
     }
 
@@ -161,6 +153,7 @@ public class RecipeService {
         String titulo = recipeUpdateRequest.getTitulo();
         String ingredientes = recipeUpdateRequest.getIngredientes();
         String modoPreparo = recipeUpdateRequest.getModoPreparo();
+        String about = recipeUpdateRequest.getAbout();
 
         if (titulo != null && !titulo.isBlank()) {
             recipe.setTitulo(titulo);
@@ -172,6 +165,10 @@ public class RecipeService {
 
         if (modoPreparo != null && !modoPreparo.isBlank()) {
             recipe.setModoPreparo(modoPreparo);
+        }
+
+        if (about != null && !about.isBlank()) {
+            recipe.setAbout(about);
         }
 
         if (body.getImage() != null) {
@@ -192,6 +189,7 @@ public class RecipeService {
                 .modoPreparo(recipe.getModoPreparo())
                 .user(userResponse)
                 .urlFoto(recipe.getUrlFoto())
+                .about(recipe.getAbout())
                 .build();
     }
 
@@ -211,8 +209,7 @@ public class RecipeService {
     }
 
     public RecipeListResponse searchRecipe(String query, Integer pagesize, Integer pagenumber, String orderBy) {
-        PanacheQuery<Recipe> recipesQuery = recipeRepository.search(query, orderBy);
-        PanacheQuery<Recipe> page = recipesQuery.page(Page.of(pagenumber, pagesize));
+        PanacheQuery<Recipe> page = recipeRepository.search(query, orderBy, pagenumber, pagesize);
         Boolean hasMore = page.hasNextPage();
 
         List<RecipeResponse> recipesResponse = page.list().stream()
@@ -230,6 +227,9 @@ public class RecipeService {
                         .build())
                 .collect(Collectors.toList());
 
-        return RecipeListResponse.builder().hasMore(hasMore).recipes(recipesResponse).build();
+        return RecipeListResponse.builder()
+                .hasMore(hasMore)
+                .recipes(recipesResponse)
+                .build();
     }
 }

@@ -1,5 +1,25 @@
 # Plano de Testes - Tasty
 
+**Tasty** é uma plataforma de compartilhamento de receitas com funcionalidades para gerenciamento de usuários, criação e consulta de receitas, e avaliação das receitas por outros usuários.
+
+#### Serviços
+
+- **User:**
+
+  - Gerencia informações do usuário como nome de exibição e foto, com operações de cadastro, consulta e atualização..
+
+- **Auth:**
+
+  - Gerencia login de usuários com email, senha e autenticação via JWT.
+
+- **Recipe:**
+
+  - Permite a criação, atualização e pesquisa de receitas.
+
+- **Rating:**
+
+  - Permite aos usuários avaliar receitas com notas e comentários, além de consultar a média de avaliações.
+
 ## Ferramentas Utilizadas
 
 - **Mockito**: Para criação de mocks e testes unitários.
@@ -43,7 +63,7 @@
 - **Análise Estática**:
   - O **SonarLint** está configurado utilizando as regras padrão.
 - **Ambiente de Integração**:
-  - O pipeline de CI/CD é configurado no **GitHub Actions** e é acionado a cada `commit` para a branch `master`.
+  - O pipeline de CI/CD é configurado no **GitHub Actions** e é acionado a cada `push`.
   - O pipeline configura o ambiente de execução com o **JDK 11** e executa os testes com **Maven**.
   - Para a realização dos testes que utilizam JWT, as **chaves públicas e privadas** para assinar e validar os tokens são armazenadas como **secrets** no GitHub Actions.
   - A regra **"Require status checks to pass before merging"** foi configurada, o que significa que o pull request só pode ser aceito após a aprovação dos testes no pipeline.
@@ -145,10 +165,11 @@
 
 #### Testes de Componente - `RatingResource`
 
-| **Cenário**                                   | **Objetivo**                                                                  | **Método HTTP** | **Endpoint**                     | **Status Esperado** | **Entradas**                                      | **Saída Esperada**                                         |
-| --------------------------------------------- | ----------------------------------------------------------------------------- | --------------- | -------------------------------- | ------------------- | ------------------------------------------------- | ---------------------------------------------------------- |
-| Listar avaliações de uma receita              | Retornar todas as avaliações de uma receita com paginação e ordenação.        | GET             | /api/ratings/{recipeId}          | 200 (OK)            | ID de receita válido com os Query Params válidos. | Objeto `RecipeRatingsResponse` com avaliações e metadados. |
-| Postar nova avaliação                         | Criar uma nova avaliação com informações corretas.                            | POST            | /api/ratings/{recipeId}          | 200 (OK)            | JSON com comentário e nota válidos.               | Objeto `RatingResponse` com detalhes da avaliação.         |
-| Postar nova avaliação com dados inválidos     | Bloquear a criação de uma avaliação ao enviar dados que violam as validações. | POST            | /api/ratings/{recipeId}          | 400 (Bad Request)   | JSON com dados inválidos.                         | Mensagem com detalhes dos erros de validação.              |
-| Obter metadados das avaliações de uma receita | Retornar média e contagem de avaliações de uma receita.                       | GET             | /api/ratings/{recipeId}/info     | 200 (OK)            | ID de receita válido.                             | Objeto `RatingInfoResponse` com média e contagem.          |
-| Obter avaliação de um usuário                 | Retornar a avaliação específica de um usuário para uma receita.               | GET             | /api/ratings/{recipeId}/{userId} | 200 (OK)            | IDs de usuário e de receita válidos.              | Objeto `RatingResponse` com detalhes da avaliação.         |
+| **Cenário**                                   | **Objetivo**                                                                            | **Método HTTP** | **Endpoint**                     | **Status Esperado** | **Entradas**                                                                               | **Saída Esperada**                                         |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- | --------------- | -------------------------------- | ------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Listar avaliações de uma receita              | Retornar todas as avaliações de uma receita com paginação e ordenação.                  | GET             | /api/ratings/{recipeId}          | 200 (OK)            | ID de receita válido com os Query Params válidos.                                          | Objeto `RecipeRatingsResponse` com avaliações e metadados. |
+| Postar nova avaliação                         | Criar uma nova avaliação com informações corretas.                                      | POST            | /api/ratings/{recipeId}          | 200 (OK)            | JSON com comentário e nota válidos.                                                        | Objeto `RatingResponse` com detalhes da avaliação.         |
+| Postar nova avaliação com dados inválidos     | Bloquear a criação de uma avaliação ao enviar dados que violam as validações.           | POST            | /api/ratings/{recipeId}          | 400 (Bad Request)   | JSON com dados inválidos.                                                                  | Mensagem com detalhes dos erros de validação.              |
+| Postar avaliação de uma receita própria       | Bloquear a criação de uma avaliação quando o usuário tenta avaliar sua própria receita. | POST            | /api/ratings/{recipeId}          | 403 (Forbidden)     | JSON com comentário e nota válidos. `recipeId` de uma receita criada pelo próprio usuário. | Mensagem "Você não pode avaliar sua própria receita."      |
+| Obter metadados das avaliações de uma receita | Retornar média e contagem de avaliações de uma receita.                                 | GET             | /api/ratings/{recipeId}/info     | 200 (OK)            | ID de receita válido.                                                                      | Objeto `RatingInfoResponse` com média e contagem.          |
+| Obter avaliação de um usuário                 | Retornar a avaliação específica de um usuário para uma receita.                         | GET             | /api/ratings/{recipeId}/{userId} | 200 (OK)            | IDs de usuário e de receita válidos.                                                       | Objeto `RatingResponse` com detalhes da avaliação.         |

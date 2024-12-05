@@ -5,6 +5,7 @@ import java.util.Map;
 import dev.vicaw.model.Recipe;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -21,19 +22,33 @@ public class RecipeRepository implements PanacheRepository<Recipe> {
             ORDER_BY_HIGHEST_SCORE,
             Sort.by("(select coalesce(avg(ra.score), 0) from Rating ra where ra.recipe.id = r.id)").descending());
 
-    public PanacheQuery<Recipe> listAllRecipes(String orderBy) {
+    public PanacheQuery<Recipe> listRecipes(String orderBy, Integer pageSize, Integer pageNumber) {
         Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
-        return findAll(sort);
+        PanacheQuery<Recipe> query = findAll(sort);
+
+        if (pageSize != null && pageNumber != null) {
+            query = query.page(Page.of(pageNumber, pageSize));
+        }
+
+        return query;
     }
 
-    public PanacheQuery<Recipe> listAllUserRecipes(Long authorId, String orderBy) {
+    public PanacheQuery<Recipe> listUserRecipes(Long authorId, String orderBy, Integer pageSize, Integer pageNumber) {
         Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
-        return find("user.id", sort, authorId);
+        PanacheQuery<Recipe> query = find("user.id", sort, authorId);
+
+        if (pageSize != null && pageNumber != null) {
+            query = query.page(Page.of(pageNumber, pageSize));
+        }
+
+        return query;
     }
 
-    public PanacheQuery<Recipe> search(String query, String orderBy) {
+    public PanacheQuery<Recipe> search(String query, String orderBy, Integer pageNumber, Integer pageSize) {
         Sort sort = SORT_OPTIONS.getOrDefault(orderBy, SORT_OPTIONS.get(ORDER_BY_HIGHEST_SCORE));
-        return find("CONCAT_WS(' ', titulo, ingredientes) LIKE CONCAT('%', ?1, '%')", sort, query);
+        PanacheQuery<Recipe> panacheQuery = find(
+                "CONCAT_WS(' ', LOWER(titulo), LOWER(ingredientes)) LIKE CONCAT('%', LOWER(?1), '%')", sort, query);
+        return panacheQuery.page(Page.of(pageNumber, pageSize));
     }
 
 }

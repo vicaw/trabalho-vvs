@@ -56,6 +56,13 @@ class AuthResourceTest {
         authInfoRepository.persist(authInfo);
     }
 
+    @AfterAll
+    @Transactional
+    void cleanupDatabase() {
+        authInfoRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
     @Test
     void testAuthenticate_validUser() {
         UserAuthRequest userAuthRequest = new UserAuthRequest(validEmail, validPassword);
@@ -86,12 +93,4 @@ class AuthResourceTest {
                 .statusCode(401)
                 .body("message", equalTo("Seu usuário ou senha estão incorretos."));
     }
-
-    @AfterAll
-    @Transactional
-    void cleanupDatabase() {
-        authInfoRepository.deleteAll();
-        userRepository.deleteAll();
-    }
-
 }
