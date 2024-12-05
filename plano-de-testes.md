@@ -63,7 +63,7 @@
 - **Análise Estática**:
   - O **SonarLint** está configurado utilizando as regras padrão.
 - **Ambiente de Integração**:
-  - O pipeline de CI/CD é configurado no **GitHub Actions** e é acionado a cada `commit` para a branch `master`.
+  - O pipeline de CI/CD é configurado no **GitHub Actions** e é acionado a cada `push`.
   - O pipeline configura o ambiente de execução com o **JDK 11** e executa os testes com **Maven**.
   - Para a realização dos testes que utilizam JWT, as **chaves públicas e privadas** para assinar e validar os tokens são armazenadas como **secrets** no GitHub Actions.
   - A regra **"Require status checks to pass before merging"** foi configurada, o que significa que o pull request só pode ser aceito após a aprovação dos testes no pipeline.

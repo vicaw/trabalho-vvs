@@ -107,6 +107,8 @@ public class RecipeService {
                 .modoPreparo(recipe.getModoPreparo())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
+                .rating(ratingService.getAverageRating(recipe.getId()))
+                .ratingCount(ratingService.getRatingCount(recipe.getId()))
                 .build();
     }
 
@@ -231,6 +233,9 @@ public class RecipeService {
                         .build())
                 .collect(Collectors.toList());
 
-        return RecipeListResponse.builder().hasMore(hasMore).recipes(recipesResponse).build();
+        return RecipeListResponse.builder()
+                .hasMore(hasMore)
+                .recipes(recipesResponse)
+                .build();
     }
 }
