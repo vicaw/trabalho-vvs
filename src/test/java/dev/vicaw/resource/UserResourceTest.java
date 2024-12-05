@@ -86,6 +86,18 @@ class UserResourceTest {
 		testImage = tempFile;
 	}
 
+	@AfterAll
+	@Transactional
+	void cleanupDatabase() {
+		authInfoRepository.deleteAll();
+		userRepository.deleteAll();
+	}
+
+	@AfterAll
+	void deleteTestImage() {
+		testImage.delete();
+	}
+
 	@Test
 	@Order(1)
 	void testGetUserById_Success() {
@@ -212,18 +224,6 @@ class UserResourceTest {
 				.put(BASE_URL + "/{id}")
 				.then()
 				.statusCode(401);
-	}
-
-	@AfterAll
-	@Transactional
-	void cleanupDatabase() {
-		authInfoRepository.deleteAll();
-		userRepository.deleteAll();
-	}
-
-	@AfterAll
-	void deleteTestImage() {
-		testImage.delete();
 	}
 
 }

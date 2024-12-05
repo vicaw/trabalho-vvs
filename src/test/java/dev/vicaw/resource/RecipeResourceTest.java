@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.microprofile.jwt.Claims;
@@ -52,46 +51,7 @@ class RecipeResourceTest {
     private List<Recipe> recipes;
     private String jwtToken;
 
-    @BeforeAll
-    @Transactional
-    void insertData() {
-        populateUsers();
-        populateRecipes();
-
-        userRepository.persist(users);
-        recipeRepository.persist(recipes);
-
-        jwtToken = Jwt
-                .issuer("http://localhost:8080")
-                .upn("email@qualquer.com")
-                .claim(Claims.full_name, users.get(0).getName())
-                .claim(Claims.sub, users.get(0).getId().toString())
-                .expiresIn(60 * 60 * 7L)
-                .sign();
-    }
-
-    @BeforeAll
-    void createTempImage() throws IOException {
-        File tempFile = File.createTempFile("test-image", ".jpg");
-        try (FileOutputStream out = new FileOutputStream(tempFile)) {
-            out.write(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0 });
-        }
-        testImage = tempFile;
-    }
-
-    @AfterAll
-    @Transactional
-    void cleanupDatabase() {
-        recipeRepository.deleteAll();
-        userRepository.deleteAll();
-    }
-
-    @AfterAll
-    void deleteTestImage() {
-        testImage.delete();
-    }
-
-    void populateUsers() {
+    private void populateUsers() {
         User user1 = User.builder()
                 .name("Joao")
                 .photoUrl("http://localhost:8080/images/default1.jpg")
@@ -102,10 +62,10 @@ class RecipeResourceTest {
                 .photoUrl("http://localhost:8080/images/default2.jpg")
                 .build();
 
-        users = Arrays.asList(user1, user2);
+        users = List.of(user1, user2);
     }
 
-    void populateRecipes() {
+    private void populateRecipes() {
         LocalDateTime now = LocalDateTime.now();
 
         Recipe recipeUser1 = Recipe.builder()
@@ -152,7 +112,46 @@ class RecipeResourceTest {
                 .user(users.get(1))
                 .build();
 
-        recipes = Arrays.asList(recipeUser1, recipe2User1, recipeUser2, recipe2User2);
+        recipes = List.of(recipeUser1, recipe2User1, recipeUser2, recipe2User2);
+    }
+
+    @BeforeAll
+    @Transactional
+    void insertData() {
+        populateUsers();
+        populateRecipes();
+
+        userRepository.persist(users);
+        recipeRepository.persist(recipes);
+
+        jwtToken = Jwt
+                .issuer("http://localhost:8080")
+                .upn("email@qualquer.com")
+                .claim(Claims.full_name, users.get(0).getName())
+                .claim(Claims.sub, users.get(0).getId().toString())
+                .expiresIn(60 * 60 * 7L)
+                .sign();
+    }
+
+    @BeforeAll
+    void createTempImage() throws IOException {
+        File tempFile = File.createTempFile("test-image", ".jpg");
+        try (FileOutputStream out = new FileOutputStream(tempFile)) {
+            out.write(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0 });
+        }
+        testImage = tempFile;
+    }
+
+    @AfterAll
+    @Transactional
+    void cleanupDatabase() {
+        recipeRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
+    @AfterAll
+    void deleteTestImage() {
+        testImage.delete();
     }
 
     @Test

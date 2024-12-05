@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,8 +15,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,7 +30,6 @@ import dev.vicaw.model.response.RecipeResponse;
 import dev.vicaw.repository.RecipeRepository;
 import dev.vicaw.repository.UserRepository;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
-import io.quarkus.panache.common.Page;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
@@ -54,16 +50,10 @@ class RecipeServiceTest {
     PanacheQuery<Recipe> recipesQuery;
 
     @Mock
-    PanacheQuery<Recipe> page;
-
-    @Mock
     JsonWebToken token;
 
     @InjectMocks
     RecipeService recipeService;
-
-    @Captor
-    ArgumentCaptor<Page> pageCaptor = ArgumentCaptor.forClass(Page.class);
 
     private User user1;
     private User user2;
@@ -71,13 +61,7 @@ class RecipeServiceTest {
     private List<Recipe> recipesUser1;
     private List<Recipe> recipesUser2;
 
-    @BeforeEach
-    void setUp() {
-        setUpUsers();
-        setUpRecipes();
-    }
-
-    void setUpUsers() {
+    private void setUpUsers() {
         user1 = User.builder()
                 .id(1L)
                 .name("User Test 1")
@@ -91,7 +75,7 @@ class RecipeServiceTest {
                 .build();
     }
 
-    void setUpRecipes() {
+    private void setUpRecipes() {
         LocalDateTime now = LocalDateTime.now();
 
         Recipe recipe1 = Recipe.builder()
@@ -159,12 +143,18 @@ class RecipeServiceTest {
         recipesUser2 = List.of(recipe4, recipe5);
     }
 
+    @BeforeEach
+    void setUp() {
+        setUpUsers();
+        setUpRecipes();
+    }
+
     @Test
     void testList_RecipesWithoutFilters() {
         when(ratingService.getAverageRating(anyLong())).thenReturn(4.5);
         when(ratingService.getRatingCount(anyLong())).thenReturn(10L);
         when(recipesQuery.list()).thenReturn(allRecipes);
-        when(recipeRepository.listAllRecipes(isNull())).thenReturn(recipesQuery);
+        when(recipeRepository.listRecipes(null, null, null)).thenReturn(recipesQuery);
 
         RecipeListResponse response = recipeService.list(null, null, null, null);
 
@@ -196,20 +186,16 @@ class RecipeServiceTest {
 
         when(ratingService.getAverageRating(anyLong())).thenReturn(4.5);
         when(ratingService.getRatingCount(anyLong())).thenReturn(10L);
-        when(recipesQuery.page(pageCaptor.capture())).thenReturn(page);
-        when(page.list()).thenReturn(recipesUser1);
-        when(page.hasNextPage()).thenReturn(false);
-        when(recipeRepository.listAllUserRecipes(user1.getId(), null)).thenReturn(recipesQuery);
+        when(recipesQuery.list()).thenReturn(recipesUser1);
+        when(recipesQuery.hasNextPage()).thenReturn(false);
+        when(recipeRepository.listUserRecipes(user1.getId(), null, pageSize, pageNumber))
+                .thenReturn(recipesQuery);
 
         RecipeListResponse response = recipeService.list(1L, pageSize, pageNumber, null);
 
+        verify(recipesQuery).hasNextPage();
         assertEquals(recipesUser1.size(), response.getRecipes().size());
 
-        Page capturedPage = pageCaptor.getValue();
-        assertEquals(pageNumber, capturedPage.index);
-        assertEquals(pageSize, capturedPage.size);
-
-        verify(page).hasNextPage();
     }
 
     @Test
@@ -334,22 +320,17 @@ class RecipeServiceTest {
 
         when(ratingService.getAverageRating(anyLong())).thenReturn(4.5);
         when(ratingService.getRatingCount(anyLong())).thenReturn(10L);
-        when(recipesQuery.page(pageCaptor.capture())).thenReturn(page);
-        when(page.list()).thenReturn(recipesUser2);
-        when(page.hasNextPage()).thenReturn(false);
+        when(recipesQuery.list()).thenReturn(recipesUser2);
+        when(recipesQuery.hasNextPage()).thenReturn(false);
 
-        when(recipeRepository.search(query, orderBy)).thenReturn(recipesQuery);
+        when(recipeRepository.search(query, orderBy, pageNumber, pageSize)).thenReturn(recipesQuery);
 
         RecipeListResponse response = recipeService.searchRecipe(query, pageSize, pageNumber,
                 orderBy);
 
         assertEquals(recipesUser2.size(), response.getRecipes().size());
 
-        Page capturedPage = pageCaptor.getValue();
-        assertEquals(pageNumber, capturedPage.index);
-        assertEquals(pageSize, capturedPage.size);
-
-        verify(page).hasNextPage();
+        verify(recipesQuery).hasNextPage();
 
         RecipeResponse recipeResponse = response.getRecipes().get(0);
         Recipe recipe = recipesUser2.get(0);
